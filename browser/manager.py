@@ -1,102 +1,59 @@
-import threading
+import logging
 from typing import TYPE_CHECKING
-from urllib.parse import urlparse
 
 from browser.chrome import ChromeDriver
-from browser.edge import EdgeDriver
-from config.helper import config
+from common import Singleton
 
 if TYPE_CHECKING:
-    from typing import Type, Optional, List
+    from typing import Type, List
     from browser.IDriver import IDriver
+    from config import ConfigManager
+    from common.items import TabInfo
 
-_manager: "Optional[BrowserManager]" = None
+_log = logging.getLogger("BrowserManager")
 
 
-class BrowserManager():
+class BrowserManager(metaclass=Singleton):
+    _config_manager: "ConfigManager"
     _mapping: "dict[str, Type[IDriver]]" = {
         "chrome": ChromeDriver,
-        "edge": EdgeDriver
     }
 
-    def __init__(self):
-        _config = config()["webdriver"]["use"]
+    def __init__(self, config_manager: "ConfigManager"):
+        self._config_manager = config_manager
+        _config = self._config_manager.config["webdriver"]["use"]
         if _config not in self._mapping:
+            _log.error("不支持的浏览器：%s", _config)
             raise Exception("不支持的浏览器")
-        self._driver: IDriver = self._mapping[_config]()
+        self._driver: IDriver = self._mapping[_config](self._config_manager)
         self._tabs: "List[TabInfo]" = []
-
-    def init_browser(self):
-        _live_config = config().get("live", {})
-        _users = _live_config.get("users", [])
-        if type(_users) is not list:
-            _users = [_users]
-        _rooms = _live_config.get("rooms", [])
-        if type(_rooms) is not list:
-            _rooms = [_rooms]
-        for _user in _users:
-            self.open_user_page(str(_user))
-        for _room in _rooms:
-            self.open_live_page(str(_room))
+        _log.debug("初始化完毕")
 
     @property
     def driver(self):
         return self._driver
 
-    def open_user_page(self, sec_user_id: str):
-        tab = TabInfo()
-        tab.tab_type = TabInfo.TAB_TYPE_USER
-        tab.user_id = sec_user_id
-        if urlparse(sec_user_id).scheme:
-            tab.url = sec_user_id
-        else:
-            # 单独的用户id
-            tab.url = "https://www.douyin.com/user/" + sec_user_id
-        self.open_tab(tab)
-
-    def open_live_page(self, live_url: str):
-        tab = TabInfo()
-        tab.tab_type = TabInfo.TAB_TYPE_LIVE
-        if not urlparse(live_url).scheme:
-            # 单独的房间号
-            live_url = "https://live.douyin.com/" + live_url
-        tab.url = live_url
-        self.open_tab(tab)
-
     def open_tab(self, tab_info: "TabInfo"):
-        tab_handler = self._driver.new_tab()
-        tab_info.tab_handler = tab_handler
+        if not tab_info.tab_handler:
+            tab_handler = self._driver.new_tab()
+            tab_info.tab_handler = tab_handler
         if not tab_info.tab_type:
             tab_info.tab_type = TabInfo.TAB_TYPE_OTHER
-        self.driver.open_url(tab_info.url, tab_handler)
+        _log.debug("打开URL：【%s】@%s", tab_info.url, tab_info.tab_handler)
+        self.driver.open_url(tab_info.url, tab_info.tab_handler)
+        _log.info("打开URL完毕：【%s】@%s", tab_info.url, tab_info.tab_handler)
         if tab_info not in self._tabs:
             self._tabs.append(tab_info)
+
+    def close_tab(self, tab_info: "TabInfo"):
+        if tab_info not in self._tabs:
+            _log.warning("提供的标签不在标签组中，不予执行")
+            return
+        _log.debug("关闭标签：%s", tab_info.tab_handler)
+        self._driver.close_tab(tab_info.tab_handler)
+        _log.info("关闭标签完毕：%s", tab_info.tab_handler)
+        self._tabs.remove(tab_info)
 
     def terminate(self):
         if self._driver:
             self._driver.terminate()
-
-
-class TabInfo(object):
-    TAB_TYPE_OTHER = "other"
-    TAB_TYPE_USER = "user"
-    TAB_TYPE_LIVE = "live"
-
-    def __init__(self):
-        self.tab_handler: str = ""
-        self.user_id: str = ""
-        self.url: str = ""
-        self.tab_type: str = self.TAB_TYPE_OTHER
-
-
-def init_manager():
-    global _manager
-    _manager = BrowserManager()
-    threading.Thread(target=_manager.init_browser).start()
-    return _manager
-
-
-def get_manager():
-    if _manager is None:
-        return init_manager()
-    return _manager

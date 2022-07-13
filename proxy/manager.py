@@ -1,44 +1,51 @@
 import asyncio
+import logging
 import threading
 from typing import TYPE_CHECKING
 
 from mitmproxy.options import Options
 from mitmproxy.tools.dump import DumpMaster
 
-from config.helper import config
+from common import Singleton
 from proxy.addon.danmaku_ws import DanmakuWebsocketAddon
 from proxy.queues import MESSAGE_QUEUE
 
 if TYPE_CHECKING:
-    from typing import Optional
+    from config import ConfigManager
 
-_manager: "Optional[ProxyManager]" = None
+_log = logging.getLogger("ProxyManager")
 
 
-class ProxyManager:
-    def __init__(self):
+class ProxyManager(metaclass=Singleton):
+    _config_manager: "ConfigManager"
+
+    def __init__(self, config_manager):
+        self._config_manager = config_manager
         self._mitm_instance = None
         self._loop: "asyncio.AbstractEventLoop" = asyncio.new_event_loop()
         opts = Options(
-            listen_host=config()['mitm']['host'],
-            listen_port=config()['mitm']['port'],
+            listen_host=self._config_manager.config['mitm']['host'],
+            listen_port=self._config_manager.config['mitm']['port'],
         )
+
         async def _init_mitm_instance():
+            _log.debug("初始化Mitm实例")
             self._mitm_instance = DumpMaster(options=opts)
             self._load_addon()
             opts.update_defer(
                 flow_detail=0,
                 termlog_verbosity="error",
             )
+            _log.debug("初始化Mitm实例完毕")
+
         self._loop.run_until_complete(_init_mitm_instance())
         self._thread = None
 
-    def __del__(self):
-        self.terminate()
-
     def terminate(self):
         if self._mitm_instance:
+            _log.debug("关闭mitm实例")
             self._mitm_instance.shutdown()
+            _log.info("关闭mitm实例完成")
         if self._loop:
             if self._loop.is_running():
                 self._loop.stop()
@@ -52,21 +59,11 @@ class ProxyManager:
             self._loop.run_until_complete(self._mitm_instance.run())
 
     def start_loop(self):
+        _log.debug("新建进程，运行mitm")
         self._thread = threading.Thread(target=self._start, args=())
         self._thread.start()
+        _log.debug("新建进程，已运行mitm")
 
     def join(self):
         if self._thread:
             self._thread.join()
-
-
-def init_manager():
-    global _manager
-    _manager = ProxyManager()
-    return _manager
-
-
-def get_manager():
-    if _manager is None:
-        return init_manager()
-    return _manager
