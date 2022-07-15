@@ -3,3 +3,4 @@ selenium==4.1.0
 
 mitmproxy~=8.0.0
 protobuf<3.20
+Flask~=2.0.3

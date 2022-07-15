@@ -50,18 +50,18 @@ class ConfigManager(metaclass=Singleton):
         if not os.path.exists(config_file):
             _log.warning("配置文件不存在，写入初始化配置")
             self._current_config = self._default_config
-            self._write_config()
+            self.save_config()
         else:
-            self._read_config()
+            self.load_config()
 
-    def _read_config(self):
+    def load_config(self):
         _log.debug("读取文件%s的配置内容", self._config_file)
         with open(self._config_file, "r", encoding="UTF8") as _f:
             yaml = YAML(typ="unsafe", pure=True)
             self._current_config = yaml.load(_f)
         _log.debug("读取文件%s的配置内容完毕", self._config_file)
 
-    def _write_config(self):
+    def save_config(self):
         _log.debug("向文件%s写入配置", self._config_file)
         with open(self._config_file, "w", encoding="UTF8") as _f:
             _log.debug("配置内容：", self._current_config)

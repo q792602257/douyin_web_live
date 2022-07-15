@@ -61,6 +61,7 @@ class CoreManager(metaclass=Singleton):
         _log.info("初始化浏览器管理器完毕")
         _log.debug("初始化输出管理器")
         self.output_manager = OutputManager(self.config_manager)
+        self.output_manager.start_loop()
         _log.info("初始化输出管理器完毕")
         self._open_config_tabs()
 
