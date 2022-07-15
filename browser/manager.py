@@ -5,7 +5,7 @@ from browser.chrome import ChromeDriver
 from common import Singleton
 
 if TYPE_CHECKING:
-    from typing import Type, List
+    from typing import Type, List, Optional
     from browser.IDriver import IDriver
     from config import ConfigManager
     from common.items import TabInfo
@@ -29,6 +29,14 @@ class BrowserManager(metaclass=Singleton):
         self._tabs: "List[TabInfo]" = []
         _log.debug("初始化完毕")
 
+    def _check_tab_valid(self, tab_info: "TabInfo") -> "bool":
+        if tab_info not in self._tabs:
+            for _tab in self._tabs:
+                if _tab.tab_handler == tab_info.tab_handler:
+                    return True
+            return False
+        return True
+
     @property
     def driver(self):
         return self._driver
@@ -46,7 +54,7 @@ class BrowserManager(metaclass=Singleton):
             self._tabs.append(tab_info)
 
     def close_tab(self, tab_info: "TabInfo"):
-        if tab_info not in self._tabs:
+        if self._check_tab_valid(tab_info):
             _log.warning("提供的标签不在标签组中，不予执行")
             return
         _log.debug("关闭标签：%s", tab_info.tab_handler)
@@ -54,6 +62,27 @@ class BrowserManager(metaclass=Singleton):
         _log.info("关闭标签完毕：%s", tab_info.tab_handler)
         self._tabs.remove(tab_info)
 
+    def refresh_tab(self, tab_info: "TabInfo"):
+        if self._check_tab_valid(tab_info):
+            _log.warning("提供的标签不在标签组中，不予执行")
+            return
+        _log.debug("刷新标签：%s", tab_info.tab_handler)
+        self._driver.refresh(tab_info.tab_handler)
+
     def terminate(self):
         if self._driver:
             self._driver.terminate()
+
+    def find_tab_handler_by_url(self, url: str) -> "Optional[str]":
+        for tab_info in self._tabs:
+            if url == tab_info.url:
+                return tab_info.tab_handler
+
+    def create_or_refresh(self, tab_info: "TabInfo") -> "str":
+        handler = self.find_tab_handler_by_url(tab_info.url)
+        if handler is not None:
+            tab_info.tab_handler = handler
+            self.refresh_tab(tab_info)
+        else:
+            self.open_tab(tab_info)
+        return tab_info.tab_handler

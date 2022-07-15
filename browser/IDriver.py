@@ -27,10 +27,12 @@ class IDriver():
         ...
 
     def close_tab(self, tab_handler: str):
-        ...
+        with self.op_tab(tab_handler):
+            self.browser.close()
 
     def open_url(self, url: str, tab_handler: str = ""):
-        ...
+        with self.op_tab(tab_handler):
+            self.browser.get(url)
 
     @contextlib.contextmanager
     def op_tab(self, tab_handler: str):
@@ -47,7 +49,9 @@ class IDriver():
             _log.debug("切换至旧Tab：%s", cur_handle)
 
     def refresh(self, tab_handler: str = ""):
-        ...
+        with self.op_tab(tab_handler):
+            self.browser.refresh()
 
     def screenshot(self, tab_handler: str = "") -> str:
-        ...
+        with self.op_tab(tab_handler):
+            return self.browser.get_screenshot_as_base64()
