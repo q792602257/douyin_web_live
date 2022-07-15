@@ -1,8 +1,3 @@
-import traceback
-from datetime import datetime
-
-from config.helper import config
-
 class Base:
 
     instance = None

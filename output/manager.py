@@ -2,7 +2,7 @@ import gzip
 import threading
 from typing import TYPE_CHECKING
 
-from config.helper import config
+from common import Singleton
 from messages.chat import ChatMessage
 from messages.control import ControlMessage
 from messages.fansclub import FansclubMessage
@@ -21,9 +21,11 @@ if TYPE_CHECKING:
     from typing import Type, Optional, List
     from output.IOutput import IOutput
     from proxy.common import MessagePayload
+    from config import ConfigManager
 
 
-class OutputManager():
+class OutputManager(metaclass=Singleton):
+    _config_manager: "ConfigManager"
     _mapping: "dict[str, Type[IOutput]]" = {
         "print": Print,
         "xml": XMLWriter,
@@ -33,14 +35,15 @@ class OutputManager():
     _thread: "Optional[threading.Thread]"= None
     _should_exit = threading.Event()
 
-    def __init__(self):
-        _config = config()['output']['use']
+    def __init__(self, config_manager: "ConfigManager"):
+        self._config_manager = config_manager
+        _config = self._config_manager.config['output']['use']
         if type(_config) != list:
             _config = [_config]
         for _c in _config:
             if _c not in self._mapping:
                 raise Exception("不支持的输出方式")
-            self._writer.append(self._mapping[_c]())
+            self._writer.append(self._mapping[_c](self._config_manager))
 
     def __del__(self):
         self.terminate()

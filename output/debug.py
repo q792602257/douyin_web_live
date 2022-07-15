@@ -2,17 +2,17 @@ import os
 import time
 import traceback
 
-from config.helper import config
 from output.IOutput import IOutput
 
 
 class DebugWriter(IOutput):
-    def __init__(self):
+    def __init__(self, config_manager):
+        super(DebugWriter, self).__init__(config_manager)
         # 获取对应配置文件
-        self.unknown_output_dir = config()['output']['debug']['save_path']['unknown']
+        self.unknown_output_dir = self._config_manager.config['output']['debug']['save_path']
         if not os.path.isdir(self.unknown_output_dir):
             os.makedirs(self.unknown_output_dir)
-        self.error_output_dir = config()['output']['debug']['save_path']['error']
+        self.error_output_dir = os.path.join(self._config_manager.config['output']['debug']['save_path'], "error")
         if not os.path.isdir(self.error_output_dir):
             os.makedirs(self.error_output_dir)
 

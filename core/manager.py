@@ -6,6 +6,7 @@ from common.items import TabInfo
 from config import ConfigManager
 from browser import BrowserManager
 from proxy import ProxyManager
+from output import OutputManager
 
 _log = logging.getLogger("CoreManager")
 _log.setLevel(logging.DEBUG)
@@ -15,6 +16,7 @@ class CoreManager(metaclass=Singleton):
     config_manager: "ConfigManager"
     browser_manager: "BrowserManager"
     proxy_manager: "ProxyManager"
+    output_manager: "OutputManager"
 
     def __del__(self):
         """
@@ -35,6 +37,13 @@ class CoreManager(metaclass=Singleton):
             pass
         finally:
             _log.debug("析构Mitm代理管理器完毕")
+        try:
+            _log.debug("析构输出管理器")
+            self.output_manager.terminate()
+        except:
+            pass
+        finally:
+            _log.debug("析构输出管理器完毕")
 
     def __init__(self):
         """
@@ -50,6 +59,9 @@ class CoreManager(metaclass=Singleton):
         _log.debug("初始化浏览器管理器")
         self.browser_manager = BrowserManager(self.config_manager)
         _log.info("初始化浏览器管理器完毕")
+        _log.debug("初始化输出管理器")
+        self.output_manager = OutputManager(self.config_manager)
+        _log.info("初始化输出管理器完毕")
         self._open_config_tabs()
 
     def restart(self):
@@ -57,11 +69,28 @@ class CoreManager(metaclass=Singleton):
         self.__del__()
         self.__init__()
 
-    def open_tab(self, tab_info: "TabInfo"):
+    def open_tab(self, url: "str", tab_type: "int" = TabInfo.TAB_TYPE_OTHER):
+        tab_info = TabInfo()
+        tab_info.url = url
+        tab_info.tab_type = TabInfo.TAB_TYPE_LIVE
         self.browser_manager.open_tab(tab_info)
 
-    def close_tab(self, tab_info: "TabInfo"):
-        self.browser_manager.close_tab(tab_info)
+    def close_tab(self, url):
+        handler = self.browser_manager.find_tab_handler_by_url(url)
+        if handler is not None:
+            tab_info = TabInfo()
+            tab_info.tab_handler = handler
+            self.browser_manager.close_tab(tab_info)
+
+    def refresh_tab(self, tab_info):
+        ...
+
+    def on_broadcast(self, room_id: str):
+        live_url = "https://live.douyin.com/" + room_id
+        tab_info = TabInfo()
+        tab_info.url = live_url
+        tab_info.tab_type = TabInfo.TAB_TYPE_LIVE
+        self.browser_manager.create_or_refresh(tab_info)
 
     def _open_config_tabs(self):
         rooms = self.config_manager.config["douyin"]["rooms"]
@@ -73,7 +102,4 @@ class CoreManager(metaclass=Singleton):
                 live_url = "https://live.douyin.com/" + room
             else:
                 live_url = room
-            tab_info = TabInfo()
-            tab_info.url = live_url
-            tab_info.tab_type = TabInfo.TAB_TYPE_LIVE
-            self.open_tab(tab_info)
+            self.open_tab(live_url, TabInfo.TAB_TYPE_LIVE)

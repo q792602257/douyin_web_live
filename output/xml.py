@@ -1,4 +1,3 @@
-from config.helper import config
 from output.IOutput import IOutput
 from typing import IO
 import time
@@ -9,10 +8,11 @@ class XMLWriter(IOutput):
     可输出与B站弹幕姬兼容的xml弹幕格式，可用于转成ass字幕
     """
 
-    def __init__(self):
+    def __init__(self, config_manager):
+        super(XMLWriter, self).__init__(config_manager)
         self._file_mappings: "dict[str, IO[str]]" = {}
         self.time_mappings: "dict[str, float]" = {}
-        self._file_name_pattern: "str" = config()['output']['xml']['file_pattern']
+        self._file_name_pattern: "str" = self._config_manager.config['output']['xml']['file_pattern']
 
     def _get_fd_by_room_id(self, room_id: str) -> IO[str]:
         if room_id in self._file_mappings:
