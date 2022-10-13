@@ -20,23 +20,21 @@
 > 5. 异步输出支持 
 
 ### **如何配置**
-1. 首先配置`config/settings.yml`中`webdriver.use`将要使用到的浏览器（现仅支持`chrome`及`edge`浏览器）
+1. 首先把`example/settings.yml`复制到根目录
 2. 下载对应浏览器`WebDriver`驱动
-   - [Edge浏览器](https://developer.microsoft.com/en-us/microsoft-edge/tools/webdriver/)
    - [Chrome浏览器](https://chromedriver.chromium.org/downloads "官网下载") [国内镜像](https://registry.npmmirror.com/binary.html?path=chromedriver/ "淘宝镜像")
-3. 配置`WebDriver`驱动可执行文件目录
-   - Edge浏览器请配置于`webdriver.edge.bin`
+3. 配置`WebDriver`驱动可执行文件目录（根据配置注释来）
    - Chrome浏览器请配置于`webdriver.chrome.bin`
-4. 配置浏览器是否需要无头`headless`模式
+4. 配置浏览器是否需要无头`headless`模式（根据配置注释来）
    - `webdriver.headless`设置为True，浏览器打开后不会显示窗口，适合Linux服务器等无需显示的情况
    - `webdriver.headless`设置为False，浏览器打开后会显示窗口，更适合需要自己手动操作浏览器等其他需要显示情况
-5. 配置输出插件(`output.use`)，可以自由搭配使用
+5. 配置输出插件(`output.use`)，可以自由搭配使用（根据配置注释来）
    - `print`：控制台打印的组件，收到弹幕信息会在控制台中输出
    - `xml`：B站弹幕姬相兼容的弹幕格式，适用于后期与视频叠加或分析
    - `debug`：开发或测试使用，会保存所有未处理的消息类型，及保留报错信息，方便后期维护排查
-6. 配置默认需要打开的房间及用户主页
+6. 配置默认需要打开的房间及用户主页（根据配置注释来）
    - `live.rooms`: 填写房间号（链接地址最后一串数字），或者完整链接地址
-   - `live.users`: 填写用户加密ID（用户首页链接地址最后一串字符串），或者完整链接地址 *（暂无任何用途）*
+   - ~~`live.users`: 填写用户加密ID（用户首页链接地址最后一串字符串），或者完整链接地址~~ *（暂无任何用途）* 
 
 ## 运行步骤：
 

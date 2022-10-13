@@ -1,0 +1,12 @@
+douyin:
+  rooms: ['房间1', '房间2'] # 这里填写房间号，或者完整的直播房间链接
+  users: [] # 功能还没开发完，这里暂时没用
+mitm: {host: 127.0.0.1, port: 7080} # 没有必要最好不要动这个
+output:
+  debug: {known: false, save_path: ./debug} # 默认不会用到，仅供调试使用用，一般不需要动
+  use: ['print', 'xml'] # print 打印出来，xml B站弹幕姬兼容文件
+  xml: {file_pattern: '{room_id}_{ts}.xml', save_path: ./} # save_path可以修改为保存在哪里
+webdriver:
+  chrome: {bin: chromedriver, no_sandbox: true} # 只有chrome，bin为chromedriver文件的位置
+  headless: false # 是否显示浏览器界面，true 显示，false 不显示
+  use: chrome # 现阶段只有chrome
