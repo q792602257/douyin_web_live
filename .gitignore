@@ -8,3 +8,4 @@ error
 __pycache__
 *.py[cod]
 *.xml
+settings.yml
